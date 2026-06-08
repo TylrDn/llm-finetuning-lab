@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  trainer:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: llm-finetuning-lab:latest
+    container_name: finetuning-trainer
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - WANDB_PROJECT=llm-finetuning-lab
+      - DATA_PATH=/workspace/data/train.jsonl
+      - DPO_DATA_PATH=/workspace/data/dpo_train.jsonl
+    volumes:
+      - .:/workspace
+      - model-cache:/root/.cache/huggingface
+      - ./outputs:/workspace/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["python", "training/lora_train.py", "--config", "configs/lora.yaml"]
+    profiles: ["lora"]
+
+  dpo-trainer:
+    extends: trainer
+    command: ["python", "training/dpo_train.py", "--config", "configs/dpo.yaml"]
+    profiles: ["dpo"]
+
+  nemo-trainer:
+    extends: trainer
+    command: ["python", "nemo/nemo_finetune.py", "--config", "nemo/sft_config.yaml"]
+    profiles: ["nemo"]
+
+  wandb-local:
+    image: wandb/local:latest
+    container_name: wandb-local
+    ports:
+      - "8080:8080"
+    volumes:
+      - wandb-data:/vol
+    environment:
+      - LOCAL_SETTINGS_PATH=/vol
+    profiles: ["wandb"]
+
+volumes:
+  model-cache:
+  wandb-data:
