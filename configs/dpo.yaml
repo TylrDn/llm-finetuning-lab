@@ -1,0 +1,38 @@
+# DPO Training Configuration
+base_model: meta-llama/Meta-Llama-3-8B
+run_name: llama3-8b-dpo
+output_dir: ./outputs/dpo
+
+# DPO hyperparameters
+beta: 0.1
+max_length: 1024
+max_prompt_length: 512
+
+# LoRA (apply to both policy and reference model)
+use_lora: true
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+  lora_dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+
+# Optional QLoRA (comment out to disable)
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-5
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.1
+  fp16: false
+  bf16: true
+  logging_steps: 10
+  save_steps: 100
+  dataloader_num_workers: 4
