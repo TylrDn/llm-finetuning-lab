@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.env
+*.log
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+outputs/
+checkpoints/
+*.bin
+*.safetensors
+*.gguf
+*.pt
+.idea/
+.vscode/

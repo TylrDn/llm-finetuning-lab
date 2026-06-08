@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: lora-finetuning-job
+  namespace: training
+spec:
+  template:
+    spec:
+      containers:
+      - name: trainer
+        image: tylrdn/llm-finetuning-lab:latest
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+        envFrom:
+        - secretRef:
+            name: finetuning-secrets
+        volumeMounts:
+        - name: model-store
+          mountPath: /models
+        - name: data-store
+          mountPath: /data
+      volumes:
+      - name: model-store
+        persistentVolumeClaim:
+          claimName: model-pvc
+      - name: data-store
+        persistentVolumeClaim:
+          claimName: data-pvc
+      restartPolicy: Never

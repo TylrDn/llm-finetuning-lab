@@ -1,0 +1,36 @@
+trainer:
+  devices: 1
+  num_nodes: 1
+  accelerator: gpu
+  precision: bf16-mixed
+  max_steps: 1000
+  val_check_interval: 100
+  log_every_n_steps: 10
+
+model:
+  restore_from_path: null
+  peft:
+    peft_scheme: lora
+    lora_tuning:
+      target_modules: ["attention_qkv"]
+      adapter_dim: 32
+      adapter_dropout: 0.1
+      column_init_method: kaiming
+      row_init_method: zero
+      layer_selection: null
+      weight_tying: false
+      position_embedding_strategy: null
+
+  data:
+    train_ds:
+      file_names: ["./data/train.jsonl"]
+      max_seq_length: 2048
+      micro_batch_size: 4
+      global_batch_size: 16
+
+exp_manager:
+  exp_dir: ./nemo_outputs
+  name: llama3-lora-sft
+  create_wandb_logger: true
+  wandb_logger_kwargs:
+    project: llm-finetuning-lab
