@@ -1,0 +1,262 @@
+# llm-finetuning-lab — Cursor Rules
+
+## Project Identity
+
+This repo is the **NVIDIA LLM Fine-Tuning Lab** — an NVIDIA Solutions Architect portfolio asset demonstrating the full fine-tuning lifecycle: data preparation → LoRA/QLoRA training (HuggingFace PEFT/TRL) → NeMo SFT (the NVIDIA differentiator) → DPO preference optimization → MMLU/HellaSwag benchmarking → GGUF export → HuggingFace Hub push. The NeMo fine-tuning path (`nemo/nemo_finetune.py`) is what elevates this above a generic HuggingFace project.
+
+**Portfolio signal:** Demonstrates full NVIDIA training stack expertise — NeMo + Megatron-LM, multi-GPU training, quantization, and the complete model delivery pipeline. Critical for NVIDIA SA and MLOps engineer roles.
+
+---
+
+## Tech Stack
+
+- **Python:** 3.11 (strict)
+- **Training frameworks:**
+  - PEFT ≥0.10 (LoRA, QLoRA)
+  - TRL ≥0.8.0 (SFTTrainer, DPOTrainer)
+  - Transformers ≥4.40 (HuggingFace)
+  - BitsAndBytes ≥0.43 (4-bit/8-bit quantization for QLoRA)
+  - NeMo ≥1.23 (`nemo.collections.nlp`) — multi-GPU SFT via Megatron-LM
+- **Experiment tracking:** wandb ≥0.17 (all training runs must log to wandb)
+- **Evaluation:** LangSmith ≥0.1.30 (eval runs), lm-eval-harness ≥0.4.2 (MMLU, HellaSwag)
+- **Export:** llama.cpp (shell via subprocess), huggingface_hub ≥0.22
+- **Config:** PyYAML ≥6.0, pydantic ≥2.6
+- **Testing:** pytest ≥8.1, pytest-mock, pytest-asyncio
+- **Linting/Typing:** ruff ≥0.4 (line-length=100), mypy ≥1.9 (strict mode)
+
+---
+
+## Architecture Overview
+
+```
+training/
+  lora_train.py         ← LoRA + QLoRA via PEFT/TRL SFTTrainer (exists)
+  dpo_train.py          ← DPO via TRL DPOTrainer (to build)
+
+nemo/
+  sft_config.yaml       ← NeMo SFT config (exists)
+  nemo_finetune.py      ← NeMo SFT Python trainer (to build — NVIDIA differentiator)
+
+configs/
+  lora.yaml             ← LoRA config (exists)
+  qlora.yaml            ← QLoRA config (exists)
+  dpo.yaml              ← DPO config (to build)
+
+data/
+  prepare_dataset.py    ← Dataset preparation + formatting (exists)
+
+evals/
+  eval_runner.py        ← Generic LangSmith eval runner (exists)
+  mmlu_eval.py          ← MMLU 5-shot benchmark (to build)
+  hellaswag_eval.py     ← HellaSwag benchmark (to build)
+  compare_report.py     ← Base vs fine-tuned comparison report (to build)
+
+export/
+  merge_and_export.py   ← LoRA merge (exists)
+  convert_gguf.py       ← GGUF conversion via llama.cpp (to build)
+  push_to_hub.py        ← HuggingFace Hub upload (to build)
+
+deploy/
+  Dockerfile
+  k8s-training-job.yaml
+
+docker-compose.yml      ← ROOT (to build)
+```
+
+---
+
+## Coding Conventions
+
+### Type Hints
+- **Required everywhere.** `from __future__ import annotations` at top of all files.
+- `X | None` not `Optional[X]`. Use `list[str]`, `dict[str, Any]`.
+- Pydantic v2 `BaseModel` for all training configs loaded from YAML.
+- `@dataclass` for eval results and metric objects.
+
+### Docstrings
+- Google-style on all public functions, classes, methods.
+- `Args:`, `Returns:`, `Raises:` sections required.
+
+### Logging
+- **Never `print()`** — `import logging; logger = logging.getLogger(__name__)`.
+- Training progress: log epoch/step/loss at INFO every N steps.
+- Eval results: log metric values at INFO level.
+- Use `logger.exception()` in except blocks.
+
+### Exception Handling
+- Custom exceptions in `training/exceptions.py`: `TrainingConfigError`, `CheckpointError`, `EvalError`, `ExportError`.
+- **Never bare `except:`.**
+- Always log + re-raise.
+
+---
+
+## NeMo Fine-Tuning Patterns
+
+### NeMo SFT Pattern (`nemo_finetune.py`):
+
+```python
+import pytorch_lightning as pl
+from nemo.collections.nlp.models.language_modeling.megatron_gpt_sft_model import MegatronGPTSFTModel
+from nemo.collections.nlp.parts.nlp_overrides import NLPDDPStrategy
+from omegaconf import DictConfig, OmegaConf
+
+def train(cfg: DictConfig) -> None:
+    """Run NeMo SFT training from OmegaConf config."""
+    trainer = pl.Trainer(
+        strategy=NLPDDPStrategy(find_unused_parameters=False),
+        **cfg.trainer,
+    )
+    model = MegatronGPTSFTModel(cfg=cfg.model, trainer=trainer)
+    trainer.fit(model)
+```
+
+### Config Loading Pattern:
+```python
+from omegaconf import DictConfig, OmegaConf
+import hydra
+
+@hydra.main(config_path="../nemo", config_name="sft_config", version_base="1.3")
+def main(cfg: DictConfig) -> None:
+    train(cfg)
+```
+
+### Always Pass Config Explicitly — Never Use Globals
+
+---
+
+## DPO Training Pattern
+
+```python
+from trl import DPOTrainer, DPOConfig
+from peft import LoraConfig, get_peft_model
+
+# DPO requires: model, ref_model, tokenizer, dataset with (prompt, chosen, rejected)
+trainer = DPOTrainer(
+    model=model,
+    ref_model=ref_model,
+    args=DPOConfig(**config.dpo_args),
+    train_dataset=train_dataset,
+    tokenizer=tokenizer,
+    peft_config=lora_config,  # optional LoRA on top of DPO
+)
+trainer.train()
+```
+
+---
+
+## Evaluation Pattern
+
+All evals use `lm-eval-harness`:
+
+```python
+from lm_eval import evaluator
+from lm_eval.models.huggingface import HFLM
+
+model = HFLM(pretrained=model_path, dtype="float16", device="cuda")
+results = evaluator.simple_evaluate(
+    model=model,
+    tasks=["mmlu"],
+    num_fewshot=5,
+)
+```
+
+Results always saved as JSON to `results/evals/`.
+
+---
+
+## Weights & Biases Integration
+
+- All training scripts log to wandb: `wandb.init(project=config.wandb_project, name=config.run_name)`
+- Log: training loss, eval loss, learning rate, GPU memory, grad norm every step
+- Log model artifacts at end of training: `wandb.log_artifact(checkpoint_dir)`
+- `WANDB_API_KEY` from env via dotenv — never hardcoded
+- `compare_report.py` uploads comparison table as wandb artifact
+
+---
+
+## Export Conventions
+
+- Always merge LoRA weights before export: `export/merge_and_export.py`
+- GGUF conversion: call llama.cpp `convert_hf_to_gguf.py` via `subprocess.run()`
+- HuggingFace Hub: use `huggingface_hub.HfApi` — push model card + weights + tokenizer
+- Model card (README.md) must include: base model, training data, eval metrics, license
+
+---
+
+## Test Conventions
+
+- **Mock all GPU calls** — use `pytest-mock` to mock `torch.cuda.is_available()`, `Trainer.train()`, `evaluator.simple_evaluate()`.
+- `@pytest.mark.parametrize` for model configs (lora, qlora, dpo).
+- Fixtures for `LoraConfig`, `DPOConfig`, `NeMoSFTConfig` in `tests/conftest.py`.
+- All config YAML loading must be testable without GPU.
+- Mark GPU tests `@pytest.mark.gpu` — excluded from default pytest run.
+
+```python
+@pytest.mark.parametrize("config_file", ["lora.yaml", "qlora.yaml", "dpo.yaml"])
+def test_config_loads_without_error(config_file): ...
+```
+
+---
+
+## File Organization Rules
+
+- One training script per paradigm: `lora_train.py`, `dpo_train.py`, `nemo_finetune.py`.
+- Configs are YAML files in `configs/` — pydantic-validated at load time.
+- Eval scripts are self-contained: take model path + config, output results JSON.
+- `export/` scripts are CLI tools with `argparse` entrypoints.
+- Results always written to `results/` — never to stdout.
+
+---
+
+## docker-compose.yml at Root
+
+```yaml
+services:
+  training:
+    build: .
+    image: llm-finetuning-lab:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WANDB_API_KEY
+      - HUGGINGFACE_TOKEN
+    volumes:
+      - ./data:/workspace/data
+      - ./results:/workspace/results
+      - ./configs:/workspace/configs
+  wandb-proxy:
+    image: wandb/local:latest
+    ports:
+      - "8080:8080"
+```
+
+---
+
+## What NOT To Do
+
+- **Do NOT skip NeMo path** in favor of HuggingFace only — NeMo is the NVIDIA differentiator.
+- **Do NOT hardcode model names or paths** — always config-driven.
+- **Do NOT run GPU training in unit tests** — always mock `Trainer.train()`.
+- **Do NOT use `print()`** — always logging.
+- **Do NOT commit model weights** — models are artifacts, not code.
+- **Do NOT use `requirements.txt` as the source of truth** — `pyproject.toml` is canonical.
+- **Do NOT skip wandb logging** — all training runs must log to wandb.
+- **Do NOT use bare `except:`** anywhere.
+- **Do NOT push to HuggingFace Hub** without a model card (README.md with eval metrics).
+- **Do NOT mix NeMo and HuggingFace tokenizers** — keep training paths fully separate.
+
+---
+
+## CI/CD
+
+- GitHub Actions: `ruff check .`, `mypy --strict`, `pytest tests/ -m "not gpu"` on every PR.
+- Training jobs run on `deploy/k8s-training-job.yaml` in production.
+- `docker-compose up training` for local development.
+
+---
+
+## Cross-Repo Standards
+
+- All secrets via `.env` + `python-dotenv`.
+- `ruff` + `mypy` in CI.
+- `docker-compose.yml` at repo root.
