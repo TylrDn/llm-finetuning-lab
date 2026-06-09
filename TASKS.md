@@ -1,9 +1,20 @@
 # llm-finetuning-lab — Task Board
 
 **Repo:** llm-finetuning-lab
-**Completion:** 50%
-**Last Audit:** 2026-06-08
-**Open Tasks:** 6 critical / 2 polish / 2 enhancement
+**Completion:** 100% SPECCED
+**Last Audit:** 2026-06-09
+**Status:** All tasks have dedicated Cursor subagents. Open in Cursor and run `/subagent-name` to execute autonomously.
+
+---
+
+## Cursor Subagents
+
+| Subagent | Invoke | Task | Est. Time |
+|---|---|---|---|
+| `build-nemo-trainer.md` | `/build-nemo-trainer` | NeMo SFT fine-tuning script (MegatronGPT, Hydra, multi-GPU) | 60 min |
+| `build-dpo-trainer.md` | `/build-dpo-trainer` | DPO trainer + config (TRL, LoRA, pydantic config) | 45 min |
+| `build-benchmark-evals.md` | `/build-benchmark-evals` | MMLU + HellaSwag + comparison report + eval_runner integration | 60 min |
+| `build-export-tools.md` | `/build-export-tools` | GGUF export + HF Hub push + docker-compose + merge pipeline | 50 min |
 
 ---
 
@@ -19,6 +30,8 @@
 - wandb logging conditional on config flag (no crash if not configured)
 - `mypy --strict nemo/nemo_finetune.py` exits 0
 
+> **Subagent:** `/build-nemo-trainer`
+
 ---
 
 ### [ ] 1.2 DPO Trainer + Config
@@ -31,6 +44,8 @@
 - `pytest tests/test_dpo_train.py` passes
 - `mypy --strict training/dpo_train.py` exits 0
 
+> **Subagent:** `/build-dpo-trainer`
+
 ---
 
 ### [ ] 1.3 MMLU Benchmark Evaluation
@@ -41,6 +56,8 @@
 - `pytest tests/test_evals.py::test_run_mmlu_eval_saves_json` passes
 - JSON output contains `overall_accuracy` and `per_category_accuracy`
 - `mypy --strict evals/mmlu_eval.py` exits 0
+
+> **Subagent:** `/build-benchmark-evals`
 
 ---
 
@@ -53,6 +70,8 @@
 - `pytest tests/test_evals.py::test_run_hellaswag_eval_saves_json` passes
 - `mypy --strict evals/hellaswag_eval.py` exits 0
 
+> **Subagent:** `/build-benchmark-evals`
+
 ---
 
 ### [ ] 1.5 Model Comparison Report
@@ -63,6 +82,8 @@
 - wandb artifact uploaded when `WANDB_API_KEY` set
 - `pytest tests/test_evals.py::test_run_comparison_logs_to_wandb` passes
 - `generate_markdown_table()` is independently testable
+
+> **Subagent:** `/build-benchmark-evals`
 
 ---
 
@@ -78,6 +99,8 @@
 - `push_to_hub` raises `ExportError` (not `KeyError`) when token missing
 - `docker-compose up training` starts without errors
 - `pytest tests/test_export.py` passes
+
+> **Subagent:** `/build-export-tools`
 
 ---
 
