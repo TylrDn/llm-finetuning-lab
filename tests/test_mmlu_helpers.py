@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
 import sys
+from unittest.mock import MagicMock
 
 sys.modules.setdefault("datasets", MagicMock())
 
-from evals.mmlu_eval import SUBJECT_GROUPS, _extract_answer_letter, _subject_to_group
+from evals.mmlu_eval import SUBJECT_GROUPS, _extract_answer_letter, _subject_to_group  # noqa: E402
 
 
 def test_mmlu_subject_group_mapping() -> None:
