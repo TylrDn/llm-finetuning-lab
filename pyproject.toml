@@ -20,3 +20,15 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.coverage.run]
+omit = [
+    "training/lora_train.py",
+    "training/dpo_train.py",
+    "export/convert_gguf.py",
+    "export/push_to_hub.py",
+    "export/merge_and_export.py",
+    "evals/mmlu_eval.py",
+    "evals/hellaswag_eval.py",
+    "nemo/nemo_finetune.py",
+]
