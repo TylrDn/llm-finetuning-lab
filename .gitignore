@@ -15,3 +15,6 @@ checkpoints/
 *.pt
 .idea/
 .vscode/
+
+.coverage
+htmlcov/
