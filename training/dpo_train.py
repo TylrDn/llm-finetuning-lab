@@ -9,16 +9,15 @@ from pathlib import Path
 import torch
 import wandb
 import yaml
-from dataclasses import dataclass
-from dotenv import load_dotenv
 from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, TaskType
+from dotenv import load_dotenv
+from peft import LoraConfig, TaskType, get_peft_model
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
 )
-from trl import DPOTrainer, DPOConfig
+from trl import DPOConfig, DPOTrainer
 
 load_dotenv()
 

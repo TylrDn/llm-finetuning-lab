@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import math
 import os
 from datetime import datetime
 from pathlib import Path
@@ -226,7 +225,7 @@ def run_hellaswag_eval(
         json.dump(results, fh, indent=2)
 
     logger.info("HellaSwag results saved to: %s", output_json)
-    print(f"\n[HellaSwag] acc_norm: {acc_norm:.4f} ({n_correct}/{total})" if acc_norm is not None else "\n[HellaSwag] Evaluation complete.")
+    print(f"\n[HellaSwag] acc_norm: {acc_norm:.4f} ({n_correct}/{total})" if acc_norm is not None else "\n[HellaSwag] Evaluation complete.")  # noqa: E501
 
     return results
 

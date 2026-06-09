@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from huggingface_hub import ModelCard, HfApi
+from huggingface_hub import ModelCard
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 logging.basicConfig(
@@ -95,7 +95,7 @@ def _load_eval_results(results_dir: str | None) -> dict[str, Any]:
 def _build_eval_section(evals: dict[str, Any]) -> str:
     """Build the evaluation results section of the model card."""
     if not evals:
-        return "_No evaluation results found. Run `evals/mmlu_eval.py` and `evals/hellaswag_eval.py` to populate._"
+        return "_No evaluation results found. Run `evals/mmlu_eval.py` and `evals/hellaswag_eval.py` to populate._"  # noqa: E501
 
     lines: list[str] = []
 
@@ -238,7 +238,8 @@ tokenizer = AutoTokenizer.from_pretrained("{repo_id}")
 
 ## About llm-finetuning-lab
 
-This model was produced using the [llm-finetuning-lab](https://github.com/llm-finetuning-lab/llm-finetuning-lab) training framework, which supports LoRA, QLoRA, DPO, and NVIDIA NeMo SFT workflows.
+This model was trained with the [llm-finetuning-lab](https://github.com/TylrDn/llm-finetuning-lab)
+pipeline.
 """
     return card
 

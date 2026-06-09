@@ -1,9 +1,10 @@
 """Post-training evaluation with LangSmith."""
+import os
+
+from dotenv import load_dotenv
 from langsmith import Client
 from langsmith.evaluation import evaluate
 from openai import OpenAI
-import os
-from dotenv import load_dotenv
 
 load_dotenv()
 

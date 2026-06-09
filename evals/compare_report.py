@@ -127,7 +127,7 @@ def _build_summary_table_md(
     base_overall = base_mmlu.get("overall") if base_mmlu else None
     ft_overall = ft_mmlu.get("overall") if ft_mmlu else None
     rows.append(
-        f"| MMLU (overall) | {_fmt_acc(base_overall)} | {_fmt_acc(ft_overall)} | {_fmt_delta(base_overall, ft_overall)} |"
+        f"| MMLU (overall) | {_fmt_acc(base_overall)} | {_fmt_acc(ft_overall)} | {_fmt_delta(base_overall, ft_overall)} |"  # noqa: E501
     )
 
     # MMLU by group
@@ -138,17 +138,25 @@ def _build_summary_table_md(
         all_groups.update(ft_mmlu.get("by_group", {}).keys())
 
     for group in sorted(all_groups):
-        base_acc = (base_mmlu.get("by_group", {}).get(group, {}) or {}).get("accuracy") if base_mmlu else None
-        ft_acc = (ft_mmlu.get("by_group", {}).get(group, {}) or {}).get("accuracy") if ft_mmlu else None
+        base_acc = (
+            (base_mmlu.get("by_group", {}).get(group, {}) or {}).get("accuracy")
+            if base_mmlu
+            else None
+        )
+        ft_acc = (
+            (ft_mmlu.get("by_group", {}).get(group, {}) or {}).get("accuracy")
+            if ft_mmlu
+            else None
+        )
         rows.append(
-            f"| MMLU — {group} | {_fmt_acc(base_acc)} | {_fmt_acc(ft_acc)} | {_fmt_delta(base_acc, ft_acc)} |"
+            f"| MMLU — {group} | {_fmt_acc(base_acc)} | {_fmt_acc(ft_acc)} | {_fmt_delta(base_acc, ft_acc)} |"  # noqa: E501
         )
 
     # HellaSwag
     base_hs_acc = base_hs.get("acc_norm") if base_hs else None
     ft_hs_acc = ft_hs.get("acc_norm") if ft_hs else None
     rows.append(
-        f"| HellaSwag (acc_norm) | {_fmt_acc(base_hs_acc)} | {_fmt_acc(ft_hs_acc)} | {_fmt_delta(base_hs_acc, ft_hs_acc)} |"
+        f"| HellaSwag (acc_norm) | {_fmt_acc(base_hs_acc)} | {_fmt_acc(ft_hs_acc)} | {_fmt_delta(base_hs_acc, ft_hs_acc)} |"  # noqa: E501
     )
 
     return "\n".join(rows)
@@ -178,7 +186,7 @@ def _build_subject_table_md(
         ft_acc = ft_sub.get("accuracy")
         group = ft_sub.get("group") or base_sub.get("group") or "—"
         rows.append(
-            f"| {subject} | {group} | {_fmt_acc(base_acc)} | {_fmt_acc(ft_acc)} | {_fmt_delta(base_acc, ft_acc)} |"
+            f"| {subject} | {group} | {_fmt_acc(base_acc)} | {_fmt_acc(ft_acc)} | {_fmt_delta(base_acc, ft_acc)} |"  # noqa: E501
         )
 
     return "\n".join(rows)
@@ -205,7 +213,7 @@ def _interpret_results(
             )
 
         # Per-group interpretation
-        all_groups = set(base_mmlu.get("by_group", {}).keys()) | set(ft_mmlu.get("by_group", {}).keys())
+        all_groups = set(base_mmlu.get("by_group", {}).keys()) | set(ft_mmlu.get("by_group", {}).keys())  # noqa: E501
         improvements: list[tuple[str, float]] = []
         regressions: list[tuple[str, float]] = []
 
@@ -252,6 +260,8 @@ def _build_markdown_report(
     base_model = (base_mmlu or base_hs or {}).get("model", "base")
     ft_model = (ft_mmlu or ft_hs or {}).get("model", "fine-tuned")
 
+    _hs_b = base_results.get("hellaswag_path") or "N/A"
+    _hs_ft = ft_results.get("hellaswag_path") or "N/A"
     report = f"""# Evaluation Comparison Report
 
 **Generated:** {timestamp}
@@ -282,8 +292,8 @@ def _build_markdown_report(
 
 | | Base | Fine-tuned |
 |--|------|------------|
-| MMLU results | `{base_results.get("mmlu_path") or "N/A"}` | `{ft_results.get("mmlu_path") or "N/A"}` |
-| HellaSwag results | `{base_results.get("hellaswag_path") or "N/A"}` | `{ft_results.get("hellaswag_path") or "N/A"}` |
+| MMLU | `{base_results.get("mmlu_path") or "N/A"}` | `{ft_results.get("mmlu_path") or "N/A"}` |
+| HellaSwag | `{_hs_b}` | `{_hs_ft}` |
 """
     return report
 
@@ -386,7 +396,7 @@ def generate_comparison(
 
     def _print_row(label: str, base_acc: float | None, ft_acc: float | None) -> None:
         print(
-            f"{label:<30} {_fmt_acc(base_acc):>10} {_fmt_acc(ft_acc):>12} {_delta_color(base_acc, ft_acc):>14}"
+            f"{label:<30} {_fmt_acc(base_acc):>10} {_fmt_acc(ft_acc):>12} {_delta_color(base_acc, ft_acc):>14}"  # noqa: E501
         )
 
     if base_mmlu or ft_mmlu:

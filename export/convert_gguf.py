@@ -53,7 +53,7 @@ def _check_llama_cpp(llama_cpp_dir: str) -> Path:
             f"\n[ERROR] llama.cpp directory not found: {cpp_path}\n\n"
             "To fix this, clone and build llama.cpp:\n\n"
             "  git clone https://github.com/ggerganov/llama.cpp.git\n"
-            "  cd llama.cpp && cmake -B build && cmake --build build --config Release -j$(nproc)\n\n"
+            "  cd llama.cpp && cmake -B build && cmake --build build --config Release -j$(nproc)\n\n"  # noqa: E501
             "Then set LLAMA_CPP_DIR or pass --llama-cpp-dir pointing to the repo root.\n"
         )
         raise FileNotFoundError(f"llama.cpp directory not found: {cpp_path}")
@@ -287,7 +287,7 @@ def convert_model(
         logger.info("Removing intermediate F32 GGUF: %s", f32_gguf)
         f32_gguf.unlink()
 
-    print(f"\n[INFO] Conversion complete.")
+    print("\n[INFO] Conversion complete.")
     print(f"  Output: {quantized_gguf}")
     return {
         "f32_gguf": str(f32_gguf) if keep_f32 else None,

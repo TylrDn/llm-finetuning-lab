@@ -1,7 +1,5 @@
 """Dataset curation and formatting for SFT."""
-from datasets import load_dataset, Dataset
-import json
-import os
+from datasets import load_dataset
 from dotenv import load_dotenv
 
 load_dotenv()

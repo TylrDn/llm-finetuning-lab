@@ -10,7 +10,6 @@ import json
 import logging
 import os
 import re
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -192,7 +191,7 @@ def evaluate_subject(
         test_data = load_dataset("cais/mmlu", subject, split="test")
     except Exception as exc:
         logger.warning("Failed to load subject '%s': %s", subject, exc)
-        return {"subject": subject, "n_correct": 0, "n_total": 0, "accuracy": None, "error": str(exc)}
+        return {"subject": subject, "n_correct": 0, "n_total": 0, "accuracy": None, "error": str(exc)}  # noqa: E501
 
     dev_examples = [
         {
@@ -286,10 +285,10 @@ def run_mmlu_eval(
         if not group_subjects:
             continue
         group_correct = sum(
-            by_subject[s]["n_correct"] for s in group_subjects if by_subject[s].get("accuracy") is not None
+            by_subject[s]["n_correct"] for s in group_subjects if by_subject[s].get("accuracy") is not None  # noqa: E501
         )
         group_total = sum(
-            by_subject[s]["n_total"] for s in group_subjects if by_subject[s].get("accuracy") is not None
+            by_subject[s]["n_total"] for s in group_subjects if by_subject[s].get("accuracy") is not None  # noqa: E501
         )
         by_group[group] = {
             "n_correct": group_correct,
@@ -329,7 +328,7 @@ def run_mmlu_eval(
         json.dump(results, fh, indent=2)
 
     logger.info("MMLU results saved to: %s", output_json)
-    print(f"\n[MMLU] Overall accuracy: {overall_accuracy:.4f}" if overall_accuracy else "\n[MMLU] Evaluation complete.")
+    print(f"\n[MMLU] Overall accuracy: {overall_accuracy:.4f}" if overall_accuracy else "\n[MMLU] Evaluation complete.")  # noqa: E501
     for group, stats in by_group.items():
         acc = stats.get("accuracy")
         print(f"  {group}: {acc:.4f}" if acc is not None else f"  {group}: N/A")

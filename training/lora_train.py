@@ -1,14 +1,15 @@
 """LoRA fine-tuning script using PEFT + TRL SFTTrainer."""
-import yaml
 import argparse
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import LoraConfig, get_peft_model
-from trl import SFTTrainer, SFTConfig
-from datasets import load_dataset
+import os
+
 import torch
 import wandb
-import os
+import yaml
+from datasets import load_dataset
 from dotenv import load_dotenv
+from peft import LoraConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from trl import SFTConfig, SFTTrainer
 
 load_dotenv()
 
@@ -53,7 +54,7 @@ def train(config_path: str):
     )
 
     train_cfg = cfg.get("training", {})
-    dataset = load_dataset("json", data_files=os.getenv("DATA_PATH", "./data/train.jsonl"), split="train")
+    dataset = load_dataset("json", data_files=os.getenv("DATA_PATH", "./data/train.jsonl"), split="train")  # noqa: E501
 
     sft_config = SFTConfig(
         output_dir=cfg["output_dir"],

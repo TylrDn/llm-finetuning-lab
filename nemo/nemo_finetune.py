@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 # NeMo conditional import
 try:
+    import pytorch_lightning as pl
     from nemo.collections.nlp.models.language_modeling.megatron_gpt_sft_model import (
         MegatronGPTSFTModel,
     )
@@ -21,9 +22,7 @@ try:
         NLPDDPStrategy,
         NLPSaveRestoreConnector,
     )
-    from nemo.utils import logging as nemo_logging
-    import pytorch_lightning as pl
-    from omegaconf import OmegaConf, DictConfig
+    from omegaconf import DictConfig, OmegaConf
 
     NEMO_AVAILABLE = True
 except ImportError:
